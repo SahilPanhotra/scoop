@@ -276,6 +276,39 @@ h1,h2,.display{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;lett
 .footer-bottom a{color:rgba(243,228,208,.45);transition:color .25s}
 .footer-bottom a:hover{color:#fff}
 .footer-bottom .links{display:flex;gap:26px}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1000px){
+  .hero-inner{grid-template-columns:1fr;gap:64px}
+  .hero-copy{text-align:center}
+  .hero-sub{margin-inline:auto}
+  .hero-cta{justify-content:center}
+  .chip-float.c1{left:2%}.chip-float.c2{right:2%}
+  .story-grid{grid-template-columns:1fr;gap:48px}
+  .story-main-img{max-width:420px}
+  .cards{grid-template-columns:1fr;max-width:440px;margin-inline:auto}
+  .cta-grid{grid-template-columns:1fr;gap:56px}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:40px}
+}
+@media (max-width:640px){
+  .nav-links{display:none}
+  .hero{padding-top:130px}
+  .story,.flavors{padding:84px 0}
+  .cta{padding:84px 0}
+  .story-small-grid{grid-template-columns:1fr;max-width:340px}
+  .footer-grid{grid-template-columns:1fr}
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .line>span{transform:none!important}
+  [data-reveal]{opacity:1!important;transform:none!important}
+}
 </style>
 </head>
 <body class="no-js">
