@@ -32,17 +32,17 @@ A single-file, self-contained landing page for **Scoop.**, a handcrafted ice cre
 
 ## Usage
 
-No build step required. Open `scoop.html` in any modern browser:
+No build step required. Open `index.html` in any modern browser:
 
 ```bash
-open scoop.html   # macOS
-xdg-open scoop.html  # Linux
+open index.html   # macOS
+xdg-open index.html  # Linux
 ```
 
 ## Structure
 
 ```
 scoop/
-├── scoop.html   # entire site: styles, markup, and scripts in one file
+├── index.html   # entire site: styles, markup, and scripts in one file
 └── preview/     # hero section preview renders
 ```
