@@ -528,5 +528,198 @@ h1,h2,.display{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;lett
     </div>
   </div>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<script>
+(function () {
+  document.body.classList.remove('no-js');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hasGsap = typeof gsap !== 'undefined';
+
+  /* ---------- Lenis smooth scroll ---------- */
+  var lenis = null;
+  if (!reduceMotion && typeof Lenis !== 'undefined') {
+    lenis = new Lenis({ duration: 1.15, smoothWheel: true });
+    if (hasGsap) {
+      lenis.on('scroll', ScrollTrigger.update);
+      gsap.ticker.add(function (t) { lenis.raf(t * 1000); });
+      gsap.ticker.lagSmoothing(0);
+    } else {
+      (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })(0);
+    }
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var id = a.getAttribute('href');
+      if (id.length > 1 && document.querySelector(id)) {
+        e.preventDefault();
+        if (lenis) lenis.scrollTo(id, { offset: -84, duration: 1.4 });
+        else document.querySelector(id).scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+
+  if (!hasGsap) return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  var EASE = 'expo.out';
+
+  /* ============================================================
+     HERO — flavor slideshow (slide-in-from-side like the video)
+     ============================================================ */
+  var line1 = document.querySelector('[data-hl="0"]');   /* stays fixed */
+  var line2 = document.querySelector('[data-hl="1"]');   /* word swaps  */
+  var heroSub = document.querySelector('.hero-sub');
+  var heroCta = document.querySelector('.hero-cta');
+  var cups = [].map.call(document.querySelectorAll('.hero-cup'), function (c) { return c; });
+  var cupChips = [].map.call(document.querySelectorAll('.cup-chip'), function (c) { return c; });
+  var dots = [].map.call(document.querySelectorAll('.hdot'), function (d) { return d; });
+
+  var FLAVORS = [
+    { word: 'Happiness',  bg: 'linear-gradient(180deg,#FFEDAE 0%,#FFD45C 78%,#FFC94A 100%)',
+      sub: 'Handcrafted ice cream made with the finest ingredients and lots of love. Every scoop is a little moment of joy.' },
+    { word: 'Sweetness',  bg: 'linear-gradient(180deg,#FFE7EE 0%,#FBC9D8 78%,#F5A9C2 100%)',
+      sub: 'Real strawberries churned into the creamiest small-batch base. Bright, fruity, and impossible to resist.' },
+    { word: 'Chocolate',  bg: 'linear-gradient(180deg,#F3E6D8 0%,#E4C9AE 78%,#D4AC86 100%)',
+      sub: 'Double dark chocolate, slow-churned and draped in fudge. Deep, rich, and unapologetically indulgent.' }
+  ];
+  var heroBg = document.querySelector('[data-hero-bg]');
+
+  /* park every non-active cup off to the RIGHT, invisible */
+  cups.forEach(function (c, j) {
+    if (j === 0) { gsap.set(c, { xPercent: 0, opacity: 1, scale: 1 }); }
+    else { gsap.set(c, { xPercent: 55, opacity: 0, scale: 0.9 }); }
+  });
+  cupChips.forEach(function (chip, j) { gsap.set(chip, { opacity: j === 0 ? 1 : 0, scale: j === 0 ? 1 : 0.5 }); });
+
+  var current = 0, swapping = false;
+  function setDot(i) { dots.forEach(function (d, j) { d.classList.toggle('is-on', j === i); }); }
+
+  function slideTo(next) {
+    if (swapping || next === current) return;
+    swapping = true;
+    var dir = next > current ? 1 : -1;
+    var prev = current;
+    current = next;
+    setDot(next);
+
+    var tl = gsap.timeline({ onComplete: function () { swapping = false; } });
+
+    /* word wipe: old up, new in from below */
+    tl.to(line2, { y: '-112%', duration: 0.42, ease: 'power2.in' }, 0)
+      .add(function () { line2.textContent = FLAVORS[next].word; }, 0.42)
+      .fromTo(line2, { y: '112%' }, { y: '0%', duration: 0.8, ease: EASE }, 0.46);
+
+    /* subtitle crossfade */
+    tl.to(heroSub, { opacity: 0, y: -12, duration: 0.35, ease: 'power2.in' }, 0)
+      .add(function () { heroSub.textContent = FLAVORS[next].sub; }, 0.38)
+      .to(heroSub, { opacity: 1, y: 0, duration: 0.7, ease: EASE }, 0.5);
+
+    /* background tint crossfade */
+    tl.to(heroBg, { opacity: 0, duration: 0.5, ease: 'power1.inOut' }, 0.05)
+      .add(function () { heroBg.style.background = FLAVORS[next].bg; }, 0.55)
+      .to(heroBg, { opacity: 1, duration: 0.7, ease: 'power1.inOut' }, 0.58);
+
+    /* cup slide: old out one side, new in from the other */
+    tl.to(cups[prev], { xPercent: -58 * dir, opacity: 0, scale: 0.9, duration: 0.7, ease: 'power2.in' }, 0.1)
+      .fromTo(cups[next],
+        { xPercent: 58 * dir, opacity: 0, scale: 0.9 },
+        { xPercent: 0, opacity: 1, scale: 1, duration: 0.95, ease: 'power3.out' }, 0.42)
+      .add(function () { cups[next].classList.add('is-active'); cups[prev].classList.remove('is-active'); }, 0.42);
+
+    /* chips */
+    tl.to(cupChips[prev], { opacity: 0, scale: 0.5, y: 12, duration: 0.35, ease: 'power2.in' }, 0.1)
+      .fromTo(cupChips[next],
+        { opacity: 0, scale: 0.5, y: 12 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: 'back.out(2.2)' }, 0.7);
+  }
+
+  /* ---------- hero intro ---------- */
+  var tl = gsap.timeline({ defaults: { ease: EASE } });
+  tl.from('.nav-pill', { y: -34, opacity: 0, duration: .9 }, .1)
+    .to('.hero-title .line > span', { y: 0, duration: 1.2, stagger: .1 }, .25)
+    .to('.hero-copy [data-reveal]', { opacity: 1, y: 0, duration: 1, stagger: .12 }, .55)
+    .from(cups[0], { xPercent: 70, opacity: 0, rotate: 5, duration: 1.4, ease: 'power3.out' }, .35)
+    .from('[data-chip]', { scale: 0, opacity: 0, duration: .85, stagger: .14, ease: 'back.out(2)' }, .95)
+    .from(cupChips[0], { scale: 0, opacity: 0, duration: .8, ease: 'back.out(2.2)' }, 1.1)
+    .add(startAuto);
+
+  /* ---------- chip idle float ---------- */
+  gsap.utils.toArray('[data-chip]').forEach(function (c, i) {
+    gsap.to(c, { y: i ? 12 : -12, duration: 2.6 + i * .5, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 1.8 });
+  });
+
+  /* ---------- auto-rotate ---------- */
+  var autoTimer = null;
+  function startAuto() {
+    if (reduceMotion) return;
+    stopAuto();
+    autoTimer = setInterval(function () { slideTo((current + 1) % FLAVORS.length); }, 4200);
+  }
+  function stopAuto() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+
+  /* dots + cup/chip clicks */
+  dots.forEach(function (d, j) {
+    d.addEventListener('click', function () { slideTo(j); startAuto(); });
+  });
+  cups.forEach(function (c, j) {
+    c.style.cursor = 'pointer';
+    c.addEventListener('click', function () { if (j === current) slideTo((current + 1) % FLAVORS.length); else slideTo(j); startAuto(); });
+  });
+  cupChips.forEach(function (chip, j) {
+    chip.style.cursor = 'pointer';
+    chip.addEventListener('click', function (e) { e.stopPropagation(); slideTo(j); startAuto(); });
+  });
+
+  /* ---------- reduced-motion: show everything ---------- */
+  if (reduceMotion) {
+    gsap.set('.hero-title .line > span', { y: 0 });
+    gsap.set('.hero-copy [data-reveal]', { opacity: 1, y: 0 });
+    gsap.set(cups[0], { xPercent: 0, opacity: 1, scale: 1 });
+  }
+
+  /* ============================================================
+     SCROLL ANIMATIONS
+     ============================================================ */
+  gsap.utils.toArray('section .line > span').forEach(function (el) {
+    gsap.to(el, {
+      y: 0, duration: 1.2, ease: EASE,
+      scrollTrigger: { trigger: el.closest('h2') || el, start: 'top 86%' }
+    });
+  });
+
+  gsap.utils.toArray('section [data-reveal]').forEach(function (el) {
+    gsap.to(el, {
+      opacity: 1, y: 0, duration: 1.05, ease: EASE,
+      scrollTrigger: { trigger: el, start: 'top 88%' }
+    });
+  });
+
+  gsap.utils.toArray('[data-parallax]').forEach(function (el) {
+    var depth = parseFloat(el.getAttribute('data-parallax'));
+    gsap.fromTo(el, { y: depth * -120 }, {
+      y: depth * 120, ease: 'none',
+      scrollTrigger: { trigger: el.closest('section'), start: 'top bottom', end: 'bottom top', scrub: 1.1 }
+    });
+  });
+
+  ScrollTrigger.batch('[data-card]', {
+    start: 'top 88%',
+    onEnter: function (batch) {
+      gsap.from(batch, { y: 70, opacity: 0, rotate: function (i) { return i % 2 ? 2.5 : -2.5; }, duration: 1.15, ease: EASE, stagger: .12, overwrite: true });
+    }
+  });
+  gsap.set('[data-card]', { opacity: 1 });
+
+  gsap.from('.footer-grid > *', {
+    y: 34, opacity: 0, duration: 1, ease: EASE, stagger: .09,
+    scrollTrigger: { trigger: '.footer', start: 'top 88%' }
+  });
+
+  window.addEventListener('load', function () { ScrollTrigger.refresh(); });
+})();
+</script>
 </body>
 </html>
